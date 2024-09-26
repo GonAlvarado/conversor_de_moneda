@@ -63,8 +63,8 @@ public class Conversion {
 
     @Override
     public String toString() {
-        return "\nmonto = " + monto + " " + monedaBase + ", " +
+        return "monto = " + monto + " " + monedaBase + ", " +
                 "resultado = " + resultado + " " + monedaDeseada + ", " +
-                "fecha = " + fecha + "\n";
+                "fecha = " + fecha;
     }
 }

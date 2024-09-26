@@ -17,6 +17,7 @@ public class Principal {
     static String monedaDeseada;
     static Double monto;
     static int opcionContinuar;
+    static Persistencia persistencia = new Persistencia();
     static Gson gson = new GsonBuilder()
             .setPrettyPrinting()
             .create();
@@ -26,29 +27,69 @@ public class Principal {
 
         List<Conversion> conversiones = new ArrayList<>();
 
-        boolean control = true;
+        boolean salir = false;
 
-        System.out.println("""
-                *********************************************
-                
+        while (true){
+            try {
+                System.out.println("""
+               *********************************************
+               \s
                   ¡Bienvenido a nuestro conversor de moneda!
-                
-                *********************************************
-                """);
+                 \s
+                  1 - Realizar una conversión
+                  2 - Historial de conversiones
+                  3 - Salir
+               \s
+               *********************************************
+               \s""");
 
-        while(control){
-            ingresarValores(teclado);
-
-            convertirMonto(monedaBase, monedaDeseada, conversiones);
-
-            mostrarMenu(teclado, conversiones);
-
-            if (opcionContinuar == 4){
-                control = false;
+                int opcion = teclado.nextInt();
+                if (opcion == 1){
+                    break;
+                } else if (opcion ==2) {
+                    System.out.println("*********************************************\n");
+                    System.out.println("   Historial de conversiones:\n");
+                    persistencia.leerLista();
+                    System.out.println("\n*********************************************");
+                } else if (opcion == 3) {
+                    salir = true;
+                    break;
+                } else {
+                    System.out.println("""
+                            *********************************************
+                            
+                                 Opción no válida.
+                            
+                            *********************************************
+                            """);
+                }
+            } catch (InputMismatchException e) {
+                System.out.println("""
+                            *********************************************
+                            
+                                 Solo se permiten caracteres numéricos.
+                            
+                            *********************************************
+                            """);
+                teclado.nextLine();
             }
+
         }
 
-        guardarCopia(teclado, conversiones);
+        if (!salir){
+            do {
+                ingresarValores(teclado);
+
+                convertirMonto(monedaBase, monedaDeseada, conversiones);
+
+                mostrarMenu(teclado, conversiones);
+
+            } while (opcionContinuar != 5);
+        }
+
+        if (!salir){
+            guardarCopia(teclado, conversiones);
+        }
 
         System.out.println("""
                 *********************************************
@@ -170,7 +211,13 @@ public class Principal {
 
                 control = false;
             } catch (InputMismatchException e) {
-                System.out.println("Solo se permiten caracteres numéricos.");
+                System.out.println("""
+                            *********************************************
+                            
+                                 Solo se permiten caracteres numéricos.
+                            
+                            *********************************************
+                            """);
                 scanner.nextLine();
             }
         }
@@ -180,21 +227,23 @@ public class Principal {
         try{
             var conexion = new Conexion();
             String json = conexion.convertir(monedaBase, monedaDeseada, monto);
-            ConversionRecord conversionRecord = gson.fromJson(json, ConversionRecord.class);
-            Conversion conversion = new Conversion(conversionRecord);
-            conversion.setMonto(monto);
-            LocalDateTime fecha = LocalDateTime.now();
-            DateTimeFormatter formato = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
-            String fechaFormateada = fecha.format(formato);
-            conversion.setFecha(fechaFormateada);
-            conversiones.add(conversion);
-            System.out.printf("""
+            if (json != null){
+                ConversionRecord conversionRecord = gson.fromJson(json, ConversionRecord.class);
+                Conversion conversion = new Conversion(conversionRecord);
+                conversion.setMonto(monto);
+                LocalDateTime fecha = LocalDateTime.now();
+                DateTimeFormatter formato = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
+                String fechaFormateada = fecha.format(formato);
+                conversion.setFecha(fechaFormateada);
+                conversiones.add(conversion);
+                System.out.printf("""
                         *********************************************
                         
                            %s %s equivale a %s %s
                         
                         *********************************************
                         """, conversion.getMonto(), conversion.getMonedaBase(), conversion.getResultado(), conversion.getMonedaDeseada());
+            }
         } catch (JsonSyntaxException e) {
             System.out.println("Ocurrio un error: " + e.getMessage());
         }
@@ -204,26 +253,37 @@ public class Principal {
         while (true){
             try {
                 System.out.println("""
-                    *********************************************
-                    
-                       1 - Realizar otra conversión
-                       2 - Invertir conversión
-                       3 - Historial de convesiones
-                       4 - Salir
-                    
-                    *********************************************
-                    """);
+                        *********************************************
+                        
+                           1 - Realizar otra conversión
+                           2 - Invertir conversión
+                           3 - Últimas conversiones
+                           4 - Historial de conversiones
+                           5 - Salir
+                        
+                        *********************************************
+                        """);
 
                 int opcion = scanner.nextInt();
 
-                if(opcion == 1) {
+                if (opcion == 1) {
                     break;
                 } else if (opcion == 2) {
                     convertirMonto(monedaDeseada, monedaBase, conversiones);
                 } else if (opcion == 3) {
-                    System.out.println(conversiones);
+                    System.out.println("*********************************************\n");
+                    System.out.println("   Últimas conversiones:\n");
+                    for (Conversion conversion : conversiones){
+                        System.out.println("   " + conversion.toString());
+                    }
+                    System.out.println("\n*********************************************");
                 } else if (opcion == 4) {
-                    opcionContinuar = 4;
+                    System.out.println("*********************************************\n");
+                    System.out.println("   Historial de conversiones:\n");
+                    persistencia.leerLista();
+                    System.out.println("\n*********************************************");
+                } else if (opcion == 5) {
+                    opcionContinuar = 5;
                     break;
                 } else {
                     System.out.println("""
@@ -235,7 +295,13 @@ public class Principal {
                             """);
                 }
             } catch (InputMismatchException e) {
-                System.out.println("Solo se permiten caracteres numéricos.");
+                System.out.println("""
+                            *********************************************
+                            
+                                 Solo se permiten caracteres numéricos.
+                            
+                            *********************************************
+                            """);
                 scanner.nextLine();
             }
         }
@@ -245,20 +311,20 @@ public class Principal {
         while (true){
             try {
                 System.out.println("""
-                ******************************************************
-                
-                ¿Desea realizar una copia de las últimas conversiones realizadas?
-                1 - Si
-                2 - No
-                
-                ******************************************************
-                """);
+                *************************************************
+               \s
+                   ¿Desea registrar las últimas conversiones realizadas?
+                  \s
+                   1 - Si
+                   2 - No
+               \s
+                *************************************************
+               \s""");
 
                 int opcion = scanner.nextInt();
 
                 if (opcion == 1){
-                    var persistir = new Persistencia();
-                    persistir.guardarLista(conversiones);
+                    persistencia.guardarLista(conversiones);
                     System.out.println("""
                             *********************************************
                             
@@ -270,7 +336,13 @@ public class Principal {
 
                 break;
             } catch (InputMismatchException e) {
-                System.out.println("Solo se permiten caracteres numéricos.");
+                System.out.println("""
+                            *********************************************
+                            
+                                 Solo se permiten caracteres numéricos.
+                            
+                            *********************************************
+                            """);
                 scanner.nextLine();
             }
         }

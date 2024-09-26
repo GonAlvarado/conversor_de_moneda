@@ -1,25 +1,32 @@
 package Model;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.List;
 
 public class Persistencia {
     public void guardarLista(List<Conversion> lista){
         try {
-            Gson gson = new GsonBuilder()
-                    .setPrettyPrinting()
-                    .create();
-            FileWriter escritura = new FileWriter("historial.json", true);
-            escritura.write("\n");
-            escritura.write(gson.toJson(lista));
+            FileWriter escritura = new FileWriter("historial.txt", true);
+            for (Conversion conversion : lista){
+                escritura.write(conversion.toString() + "\n");
+            }
             escritura.close();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            System.out.println("   Error al registrar las conversiones");
         }
 
+    }
+
+    public void leerLista(){
+        try {
+            Reader lector = new FileReader("historial.txt");
+            BufferedReader lectura = new BufferedReader(lector);
+            String linea;
+            while ((linea = lectura.readLine()) != null){
+                System.out.println("   " + linea);
+            }
+        } catch (IOException e) {
+            System.out.println("   No se ha registrado ninguna conversión.");
+        }
     }
 }
